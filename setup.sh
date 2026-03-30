@@ -5,7 +5,7 @@ MARKER="/var/lib/server_setup_done"
 if [ -f "$MARKER" ] && [ "$1" != "--ignore" ]; then
     echo "-------------------------------------------------------"
     echo "⚠️  Система уже настроена! Чтобы запустить принудительно:"
-    echo "bash <(curl -Ls твоя_ссылка) --ignore"
+    echo "bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) --ignore"
     echo "-------------------------------------------------------"
     exit 0
 fi
