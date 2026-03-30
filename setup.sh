@@ -60,26 +60,35 @@ chmod 700 "/home/$USERNAME/.ssh"
 chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
 
 # ---  КОНФИГУРАЦИЯ SSH (Только ключи, новый порт, без Root) ---
-echo "--- Настройка SSH (Запрет паролей и Root-доступа) ---"
+echo "--- Защита SSH (Только ключи, новый порт) ---"
+SSH_CONF="/etc/ssh/sshd_config"
+CUSTOM_CONF="/etc/ssh/sshd_config.d/99-custom.conf"
 
-# Меняем порт
-sed -i "s/^#Port 22/Port $SSHPORT/" /etc/ssh/sshd_config
-sed -i "s/^Port 22/Port $SSHPORT/" /etc/ssh/sshd_config
+# Создаем директорию, если её нет (для старых систем)
+mkdir -p /etc/ssh/sshd_config.d/
 
-# Запрещаем вход под root
-sed -i "s/^#PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
-sed -i "s/^PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
+# Создаем приоритетный конфиг
+cat <<EOF > "$CUSTOM_CONF"
+Port $SSHPORT
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+ChallengeResponseAuthentication no
+EOF
 
-# ОТКЛЮЧАЕМ ВХОД ПО ПАРОЛЮ (Разрешаем только ключи)
-sed -i "s/^#PasswordAuthentication.*/PasswordAuthentication no/" /etc/ssh/sshd_config
-sed -i "s/^PasswordAuthentication.*/PasswordAuthentication no/" /etc/ssh/sshd_config
+# Чистим основной конфиг от возможных конфликтов с паролями
+sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' "$SSH_CONF"
+sed -i 's/^#PasswordAuthentication/PasswordAuthentication/' "$SSH_CONF"
 
-# Дополнительная защита: отключаем пустые пароли
-sed -i "s/^#PermitEmptyPasswords.*/PermitEmptyPasswords no/" /etc/ssh/sshd_config
+# Проверка и перезагрузка
+if sshd -t; then
+    systemctl restart ssh
+    echo "✅ SSH настроен (Порт: $SSHPORT, Пароли: OFF)"
+else
+    echo "❌ Ошибка в конфиге SSH! Проверьте вручную."
+    rm "$CUSTOM_CONF"
+fi
 
-
-# Проверка конфига перед перезагрузкой (чтобы не вылететь с ошибкой)
-sshd -t && systemctl restart ssh
 
 # --- 6. UFW (ФАЕРВОЛ) ---
 ufw default deny incoming
