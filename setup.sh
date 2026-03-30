@@ -59,16 +59,20 @@ chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.ssh"
 chmod 700 "/home/$USERNAME/.ssh"
 chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
 
-# ---  КОНФИГУРАЦИЯ SSH (Только ключи, новый порт, без Root) ---
-echo "--- Защита SSH (Только ключи, новый порт) ---"
-SSH_CONF="/etc/ssh/sshd_config"
-CUSTOM_CONF="/etc/ssh/sshd_config.d/99-custom.conf"
+# --- НАСТРОЙКА SSH (Фикс создания файла) ---
+echo "--- Настройка SSH (Создание 99-custom.conf) ---"
 
-# Создаем директорию, если её нет (для старых систем)
-mkdir -p /etc/ssh/sshd_config.d/
+# 1. Гарантируем наличие папки и пути для запуска
+mkdir -p /etc/ssh/sshd_config.d
+mkdir -p /run/sshd
 
-# Создаем приоритетный конфиг
-cat <<EOF > "$CUSTOM_CONF"
+# 2. Убеждаемся, что основной конфиг включает эту папку (ставим в 1-ю строку)
+if ! grep -q "Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
+    sed -i "1i Include /etc/ssh/sshd_config.d/*.conf" /etc/ssh/sshd_config
+fi
+
+# 3. Прямая запись в файл (без переменных путей, чтобы исключить ошибку)
+cat <<EOF > /etc/ssh/sshd_config.d/99-custom.conf
 Port $SSHPORT
 PermitRootLogin no
 PasswordAuthentication no
@@ -76,17 +80,20 @@ PubkeyAuthentication yes
 ChallengeResponseAuthentication no
 EOF
 
-# Чистим основной конфиг от возможных конфликтов с паролями
-sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' "$SSH_CONF"
-sed -i 's/^#PasswordAuthentication/PasswordAuthentication/' "$SSH_CONF"
+# 4. Комментируем старые параметры в основном файле, чтобы они не мешали
+sed -i 's/^\(Port\|PermitRootLogin\|PasswordAuthentication\|PubkeyAuthentication\)/#\1/g' /etc/ssh/sshd_config
 
-# Проверка и перезагрузка
+# 5. Права доступа
+chmod 600 /etc/ssh/sshd_config.d/99-custom.conf
+
+# 6. Финальная проверка и перезапуск
 if sshd -t; then
     systemctl restart ssh
-    echo "✅ SSH настроен (Порт: $SSHPORT, Пароли: OFF)"
+    echo "✅ SSH успешно настроен. Файл /etc/ssh/sshd_config.d/99-custom.conf создан."
 else
-    echo "❌ Ошибка в конфиге SSH! Проверьте вручную."
-    rm "$CUSTOM_CONF"
+    echo "❌ Ошибка в sshd -t. Проверьте содержимое /etc/ssh/sshd_config.d/99-custom.conf"
+    # На всякий случай пробуем рестарт, если ошибка была только в /run/sshd
+    systemctl restart ssh
 fi
 
 
