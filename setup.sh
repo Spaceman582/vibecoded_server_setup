@@ -59,12 +59,27 @@ chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.ssh"
 chmod 700 "/home/$USERNAME/.ssh"
 chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
 
-# Настройка SSH
+# ---  КОНФИГУРАЦИЯ SSH (Только ключи, новый порт, без Root) ---
+echo "--- Настройка SSH (Запрет паролей и Root-доступа) ---"
+
+# Меняем порт
 sed -i "s/^#Port 22/Port $SSHPORT/" /etc/ssh/sshd_config
 sed -i "s/^Port 22/Port $SSHPORT/" /etc/ssh/sshd_config
+
+# Запрещаем вход под root
 sed -i "s/^#PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
 sed -i "s/^PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
-systemctl restart ssh
+
+# ОТКЛЮЧАЕМ ВХОД ПО ПАРОЛЮ (Разрешаем только ключи)
+sed -i "s/^#PasswordAuthentication.*/PasswordAuthentication no/" /etc/ssh/sshd_config
+sed -i "s/^PasswordAuthentication.*/PasswordAuthentication no/" /etc/ssh/sshd_config
+
+# Дополнительная защита: отключаем пустые пароли
+sed -i "s/^#PermitEmptyPasswords.*/PermitEmptyPasswords no/" /etc/ssh/sshd_config
+
+
+# Проверка конфига перед перезагрузкой (чтобы не вылететь с ошибкой)
+sshd -t && systemctl restart ssh
 
 # --- 6. UFW (ФАЕРВОЛ) ---
 ufw default deny incoming
