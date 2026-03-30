@@ -72,12 +72,12 @@ ufw default allow outgoing
 ufw allow "$SSHPORT"/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
-ufw allow 2053/tcp 
+#ufw allow 2053/tcp 
 ufw --force enable
 
 # --- 7. ПАНЕЛЬ 3X-UI ---
-echo "--- Запуск инсталлятора 3x-ui ---"
-bash <(curl -Ls https://raw.githubusercontent.com)
+#echo "--- Запуск инсталлятора 3x-ui ---"
+#bash <(curl -Ls https://raw.githubusercontent.com)
 
 # --- 8. ФИНАЛ ---
 touch "$MARKER"
