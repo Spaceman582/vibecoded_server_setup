@@ -53,11 +53,11 @@ echo "$USERNAME:$USERPASS" | chpasswd
 usermod -aG sudo "$USERNAME"
 echo "neofetch" >> "/home/$USERNAME/.bashrc"
 
-#mkdir -p "/home/$USERNAME/.ssh"
-#cp /root/.ssh/authorized_keys "/home/$USERNAME/.ssh/"
-#chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.ssh"
-#chmod 700 "/home/$USERNAME/.ssh"
-#chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
+mkdir -p "/home/$USERNAME/.ssh"
+cp /root/.ssh/authorized_keys "/home/$USERNAME/.ssh/"
+chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.ssh"
+chmod 700 "/home/$USERNAME/.ssh"
+chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
 
 # --- НАСТРОЙКА SSH (Фикс создания файла) ---
 echo "--- Настройка SSH (Создание 01-custom.conf) ---"
@@ -77,7 +77,8 @@ Port $SSHPORT
 PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
-ChallengeResponseAuthentication no
+AllowUsers $USERNAME
+#ChallengeResponseAuthentication no
 EOF
 
 # 4. Комментируем старые параметры в основном файле, чтобы они не мешали
