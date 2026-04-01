@@ -53,14 +53,14 @@ echo "$USERNAME:$USERPASS" | chpasswd
 usermod -aG sudo "$USERNAME"
 echo "neofetch" >> "/home/$USERNAME/.bashrc"
 
-mkdir -p "/home/$USERNAME/.ssh"
-cp /root/.ssh/authorized_keys "/home/$USERNAME/.ssh/"
-chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.ssh"
-chmod 700 "/home/$USERNAME/.ssh"
-chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
+#mkdir -p "/home/$USERNAME/.ssh"
+#cp /root/.ssh/authorized_keys "/home/$USERNAME/.ssh/"
+#chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.ssh"
+#chmod 700 "/home/$USERNAME/.ssh"
+#chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
 
 # --- НАСТРОЙКА SSH (Фикс создания файла) ---
-echo "--- Настройка SSH (Создание 99-custom.conf) ---"
+echo "--- Настройка SSH (Создание 01-custom.conf) ---"
 
 # 1. Гарантируем наличие папки и пути для запуска
 mkdir -p /etc/ssh/sshd_config.d
@@ -72,7 +72,7 @@ if ! grep -q "Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
 fi
 
 # 3. Прямая запись в файл (без переменных путей, чтобы исключить ошибку)
-cat <<EOF > /etc/ssh/sshd_config.d/99-custom.conf
+cat <<EOF > /etc/ssh/sshd_config.d/01-custom.conf
 Port $SSHPORT
 PermitRootLogin no
 PasswordAuthentication no
@@ -84,14 +84,14 @@ EOF
 sed -i 's/^\(Port\|PermitRootLogin\|PasswordAuthentication\|PubkeyAuthentication\)/#\1/g' /etc/ssh/sshd_config
 
 # 5. Права доступа
-chmod 600 /etc/ssh/sshd_config.d/99-custom.conf
+chmod 600 /etc/ssh/sshd_config.d/01-custom.conf
 
 # 6. Финальная проверка и перезапуск
 if sshd -t; then
     systemctl restart ssh
-    echo "✅ SSH успешно настроен. Файл /etc/ssh/sshd_config.d/99-custom.conf создан."
+    echo "✅ SSH успешно настроен. Файл /etc/ssh/sshd_config.d/01-custom.conf создан."
 else
-    echo "❌ Ошибка в sshd -t. Проверьте содержимое /etc/ssh/sshd_config.d/99-custom.conf"
+    echo "❌ Ошибка в sshd -t. Проверьте содержимое /etc/ssh/sshd_config.d/01-custom.conf"
     # На всякий случай пробуем рестарт, если ошибка была только в /run/sshd
     systemctl restart ssh
 fi
